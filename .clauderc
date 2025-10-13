@@ -1,0 +1,78 @@
+# OANDA Algorithmic Trading Project Configuration
+# This file provides context for Claude to understand the project structure and common debugging steps
+
+## Project Overview
+This is an OANDA algorithmic trading proof-of-concept project using the tpqoa library wrapper.
+The project provides examples and utilities for connecting to OANDA's fxTrade API for forex trading.
+
+## Key Dependencies
+- tpqoa: OANDA API wrapper library (v0.0.56)
+- pandas: Data manipulation
+- python-dotenv: Environment variable management
+
+## Environment Setup
+Virtual environment location: ./venv/
+Activate with: source venv/bin/activate
+
+## Configuration Files
+- .env: Contains OANDA API credentials (OANDA_API_KEY, OANDA_ACCOUNT_ID, OANDA_ENVIRONMENT)
+- .env.template: Template for environment variables
+- config.py: Configuration loader with override=True for dotenv
+
+## Common Issues & Solutions
+
+### Authentication (401 Errors)
+PROBLEM: "401 response... does not have field 'account' (contains 'errorMessage')"
+CAUSE: Environment variables overriding .env file with old/invalid API keys
+SOLUTION: Ensure config.py uses load_dotenv(override=True)
+DEBUG STEPS:
+1. Check env vars: echo $OANDA_API_KEY
+2. Test API key directly: curl -H "Authorization: Bearer $API_KEY" "https://api-fxpractice.oanda.com/v3/accounts/$ACCOUNT_ID/summary"
+3. Verify .env file contents match working credentials
+
+### Historical Data Issues
+PROBLEM: tpqoa get_history() parameter mismatches
+CAUSE: tpqoa expects start/end dates, not count parameter
+SOLUTION: Convert count to date ranges in wrapper method
+NOTE: Account for weekends and market hours when calculating date ranges
+
+### API Endpoints
+Practice: https://api-fxpractice.oanda.com
+Live: https://api-fxtrade.oanda.com
+Stream Practice: https://stream-fxpractice.oanda.com
+Stream Live: https://stream-fxtrade.oanda.com
+
+## Testing Commands
+# Test basic connection
+python oanda_connection.py
+
+# Run all examples
+python examples.py
+
+# Test API directly
+curl -H "Authorization: Bearer $OANDA_API_KEY" "https://api-fxpractice.oanda.com/v3/accounts/$OANDA_ACCOUNT_ID/summary"
+
+## Key Files
+- oanda_connection.py: Main API wrapper class
+- examples.py: Comprehensive usage examples
+- config.py: Environment configuration with override support
+
+## Development Notes
+- Always use practice environment for development (OANDA_ENVIRONMENT=practice)
+- The account ID format is XXX-XXX-XXXXXXXX-XXX
+- API keys are long alphanumeric strings with hyphens
+- tpqoa requires a temporary config file in [oanda] format
+- Historical data requires start/end dates, not count parameters
+- Market data is not available during weekends
+
+## Debugging Checklist
+1. Verify virtual environment is activated
+2. Check .env file exists and has correct credentials
+3. Ensure no conflicting environment variables are set
+4. Test API credentials with direct curl request
+5. Check if requesting data during market hours
+6. Verify instrument names use underscores (EUR_USD not EUR/USD)
+
+## Linting/Testing
+# Add appropriate commands when project grows
+# Example: npm run lint, npm run test, etc.

@@ -1,0 +1,17 @@
+certifi==2025.10.5
+charset-normalizer==3.4.3
+idna==3.10
+numpy==2.3.3
+oandapyV20==0.7.2
+pandas==2.3.3
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+pytz==2025.2
+PyYAML==6.0.3
+requests==2.32.5
+six==1.17.0
+tpqoa @ git+https://github.com/yhilpisch/tpqoa.git@4a79f30b7095642844ef99741d9bfcb952e394db
+tzdata==2025.2
+ujson==5.11.0
+urllib3==2.5.0
+v20==3.0.25.0
