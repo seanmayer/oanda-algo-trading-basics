@@ -2,7 +2,7 @@ import pandas as pd
 import tpqoa
 import tempfile
 import os
-from config import config
+from utils.config import config
 
 class OandaAPI:
     def __init__(self):

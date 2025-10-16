@@ -31,6 +31,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
 # Distribution / packaging
 .Python
 build/
