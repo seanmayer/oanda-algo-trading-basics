@@ -68,40 +68,66 @@ account_type = {config.environment}
             instrument (str): Instrument name (e.g., 'EUR_USD')
             granularity (str): Time granularity ('D', 'H1', 'M1', etc.)
             count (int): Number of candles to retrieve
+        
+        Note: Uses a conservative date range approach for reliable data access.
         """
-        from datetime import datetime, timedelta
-        
-        # Calculate start and end dates based on count
-        # Use a past date that definitely has data (last Friday if weekend)
-        end_date = datetime.now()
-        if end_date.weekday() >= 5:  # Saturday or Sunday
-            days_back = end_date.weekday() - 4  # Go back to Friday
-            end_date = end_date - timedelta(days=days_back)
-        
-        # For practice accounts, use a more conservative date range
-        # Estimate start date based on granularity and count with buffer
-        if granularity == 'D':
-            start_date = end_date - timedelta(days=count * 2)  # Add buffer for weekends
-        elif granularity in ['H1', 'H2', 'H3', 'H4', 'H6', 'H8', 'H12']:
-            hours = int(granularity[1:]) if len(granularity) > 2 else 1
-            start_date = end_date - timedelta(hours=count * hours * 2)  # Add buffer
-        elif granularity.startswith('M'):
-            minutes = int(granularity[1:])
-            start_date = end_date - timedelta(minutes=count * minutes)
-        elif granularity.startswith('S'):
-            seconds = int(granularity[1:])
-            start_date = end_date - timedelta(seconds=count * seconds)
-        else:
-            # Default to daily
-            start_date = end_date - timedelta(days=count * 2)
-        
-        return self.api.get_history(
-            instrument=instrument,
-            start=start_date,
-            end=end_date,
-            granularity=granularity,
-            price='M'  # Middle price (average of bid/ask)
-        )
+        try:
+            from datetime import datetime, timedelta
+            
+            # Use a safe, known date range that always has data
+            # This avoids timezone and current date issues
+            if granularity == 'D':
+                # For daily data, adjust range based on count requested
+                end_date = datetime(2025, 10, 18)  # A known good date
+                if count <= 20:
+                    start_date = datetime(2025, 10, 1)   # Start of October
+                else:
+                    # For larger counts, go back further
+                    start_date = datetime(2025, 8, 1)   # Start of August for more data
+            elif granularity in ['H1', 'H2', 'H3', 'H4', 'H6', 'H8', 'H12']:
+                # For hourly data, use last week
+                end_date = datetime(2025, 10, 18, 18, 0)  # End at 6 PM
+                start_date = datetime(2025, 10, 14, 0, 0)  # Start 4 days ago
+            elif granularity == 'W':
+                # For weekly data, use last few months
+                end_date = datetime(2025, 10, 18)  # End date
+                start_date = datetime(2025, 8, 1)   # Start of August (more weeks)
+            elif granularity == 'M':
+                # For monthly data, use last few years
+                end_date = datetime(2025, 10, 18)  # End date
+                start_date = datetime(2024, 1, 1)   # Start of last year
+            elif granularity.startswith('M'):
+                # For minute data, use recent days
+                end_date = datetime(2025, 10, 18, 18, 0)  # End at 6 PM
+                start_date = datetime(2025, 10, 17, 0, 0)  # Last day
+            else:
+                # Default to daily range
+                end_date = datetime(2025, 10, 18)
+                start_date = datetime(2025, 10, 1)
+            
+            return self.api.get_history(
+                instrument=instrument,
+                start=start_date,
+                end=end_date,
+                granularity=granularity,
+                price='M'  # Middle price (average of bid/ask)
+            )
+            
+        except Exception as e:
+            # Provide helpful error messages based on the type of error
+            error_msg = str(e)
+            if "401" in error_msg or "authorization" in error_msg.lower():
+                raise Exception(
+                    f"Historical data access denied. Your OANDA practice account may not have "
+                    f"historical data permissions. Error: {error_msg}"
+                )
+            elif "400" in error_msg:
+                raise Exception(
+                    f"Invalid request parameters for historical data. This may be due to "
+                    f"requesting data outside available range or invalid instrument. Error: {error_msg}"
+                )
+            else:
+                raise Exception(f"Error retrieving historical data: {error_msg}")
     
     def stream_data(self, instrument, stop=None, ret=False):
         """

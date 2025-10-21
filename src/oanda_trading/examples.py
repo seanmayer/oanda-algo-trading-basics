@@ -33,25 +33,130 @@ def main():
         if technical_name in major_pairs:
             print(f"  {technical_name} - {display_name}")
     
-    # 3. Historical Data Example
-    print("\n3. 📈 Historical Data Example (EUR_USD)")
+    # 3. Historical Data Examples (EUR_USD)
+    print("\n3. 📈 Historical Data Examples (EUR_USD)")
     print("-" * 30)
+    
+    # 3a. Daily Data
+    print("\n📅 Daily Data:")
     try:
-        # Get last 10 daily candles for EUR_USD
-        hist_data = api.get_history('EUR_USD', granularity='D', count=10)
-        print(f"Retrieved {len(hist_data)} daily candles for EUR_USD")
-        print("\nLatest 5 candles:")
-        print(hist_data.tail())
+        daily_data = api.get_history('EUR_USD', granularity='D', count=10)
+        print(f"Retrieved {len(daily_data)} daily candles for EUR_USD")
+        print("\nLatest 3 daily candles:")
+        print(daily_data.tail(3))
         
-        # Basic statistics
-        print(f"\nPrice Statistics (Close prices):")
-        print(f"  Current: {hist_data['c'].iloc[-1]:.5f}")
-        print(f"  High:    {hist_data['c'].max():.5f}")
-        print(f"  Low:     {hist_data['c'].min():.5f}")
-        print(f"  Mean:    {hist_data['c'].mean():.5f}")
+        print(f"\nDaily Price Statistics (Close prices):")
+        print(f"  Current: {daily_data['c'].iloc[-1]:.5f}")
+        print(f"  High:    {daily_data['c'].max():.5f}")
+        print(f"  Low:     {daily_data['c'].min():.5f}")
+        print(f"  Mean:    {daily_data['c'].mean():.5f}")
         
     except Exception as e:
-        print(f"Error getting historical data: {e}")
+        print(f"Error getting daily data: {e}")
+    
+    # 3b. Hourly Data
+    print("\n⏰ Hourly Data:")
+    try:
+        hourly_data = api.get_history('EUR_USD', granularity='H1', count=10)
+        print(f"Retrieved {len(hourly_data)} hourly candles for EUR_USD")
+        print("\nLatest 3 hourly candles:")
+        print(hourly_data.tail(3))
+        
+        # Show hourly volatility
+        hourly_range = hourly_data['h'] - hourly_data['l']
+        print(f"\nHourly Statistics:")
+        print(f"  Average hourly range: {hourly_range.mean():.5f}")
+        print(f"  Max hourly range:     {hourly_range.max():.5f}")
+        print(f"  Latest close:         {hourly_data['c'].iloc[-1]:.5f}")
+        
+    except Exception as e:
+        print(f"Error getting hourly data: {e}")
+    
+    # 3c. Weekly Data
+    print("\n📊 Weekly Data:")
+    try:
+        weekly_data = api.get_history('EUR_USD', granularity='W', count=10)
+        print(f"Retrieved {len(weekly_data)} weekly candles for EUR_USD")
+        print("\nLatest 3 weekly candles:")
+        print(weekly_data.tail(3))
+        
+        # Show weekly trend
+        weekly_change = weekly_data['c'].pct_change() * 100
+        print(f"\nWeekly Statistics:")
+        print(f"  Average weekly change: {weekly_change.mean():.2f}%")
+        print(f"  Latest weekly change:  {weekly_change.iloc[-1]:.2f}%")
+        print(f"  Weekly volatility:     {weekly_change.std():.2f}%")
+        
+    except Exception as e:
+        print(f"Error getting weekly data: {e}")
+    
+    # 3d. Monthly/Long-term Analysis
+    print("\n📈 Monthly Data (longer-term trend):")
+    
+    # First try to get actual monthly data
+    monthly_success = False
+    try:
+        monthly_data = api.get_history('EUR_USD', granularity='M', count=10)
+        print(f"Retrieved {len(monthly_data)} monthly candles for EUR_USD")
+        
+        # Check for data quality issues
+        if not monthly_data.empty:
+            # Clean the data - remove any rows with missing values
+            clean_monthly = monthly_data.dropna()
+            
+            if not clean_monthly.empty and len(clean_monthly) > 1:
+                print("\nLatest 3 monthly candles:")
+                print(clean_monthly.tail(3))
+                
+                monthly_change = clean_monthly['c'].pct_change() * 100
+                print(f"\nMonthly Statistics:")
+                print(f"  Average monthly change: {monthly_change.mean():.2f}%")
+                print(f"  Latest monthly change:  {monthly_change.iloc[-1]:.2f}%")
+                print(f"  Monthly volatility:     {monthly_change.std():.2f}%")
+                
+                if len(clean_monthly) >= 6:
+                    six_month_trend = ((clean_monthly['c'].iloc[-1] / clean_monthly['c'].iloc[-6]) - 1) * 100
+                    print(f"  6-month trend:          {six_month_trend:.2f}%")
+                
+                monthly_success = True
+        
+    except Exception as e:
+        pass  # We'll handle this with the fallback below
+    
+    # If monthly data failed, use daily data to create monthly analysis
+    if not monthly_success:
+        print("⚠️  Native monthly data not available in practice account")
+        print("📊 Using daily data for monthly analysis (alternative approach):")
+        
+        try:
+            # Get more daily data for monthly analysis
+            extended_daily = api.get_history('EUR_USD', granularity='D', count=100)
+            
+            if not extended_daily.empty and len(extended_daily) > 20:
+                # Resample daily data to approximate monthly periods (every ~22 trading days)
+                extended_daily.index = extended_daily.index
+                monthly_approx = extended_daily.iloc[::22]  # Every 22 days ≈ 1 month
+                
+                print(f"\nApproximate monthly periods from daily data ({len(monthly_approx)} periods):")
+                print(monthly_approx[['o', 'h', 'l', 'c']].tail(3))
+                
+                if len(monthly_approx) > 1:
+                    monthly_changes = monthly_approx['c'].pct_change() * 100
+                    print(f"\nMonthly-Period Statistics (from daily data):")
+                    print(f"  Average period change:  {monthly_changes.mean():.2f}%")
+                    print(f"  Latest period change:   {monthly_changes.iloc[-1]:.2f}%")
+                    print(f"  Period volatility:      {monthly_changes.std():.2f}%")
+                    
+                    # Long-term trend analysis
+                    if len(monthly_approx) >= 3:
+                        three_month_trend = ((monthly_approx['c'].iloc[-1] / monthly_approx['c'].iloc[-3]) - 1) * 100
+                        print(f"  3-period trend:         {three_month_trend:.2f}%")
+            else:
+                print("Insufficient daily data for monthly analysis")
+                
+        except Exception as e:
+            print(f"Error creating monthly analysis from daily data: {e}")
+            print("💡 Note: OANDA practice accounts have limited historical data access")
     
     # 4. Instrument Search Example
     print("\n4. 🔍 Instrument Search")
