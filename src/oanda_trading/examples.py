@@ -2,7 +2,7 @@
 OANDA API Examples using tpqoa wrapper
 """
 import pandas as pd
-from .oanda_connection import OandaAPI
+from oanda_trading.oanda_connection import OandaAPI
 
 def main():
     # Initialize API connection
