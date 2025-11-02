@@ -1,0 +1,21 @@
+{
+  "session_info": {
+    "start_time": "2025-10-25T16:06:02.661281",
+    "end_time": "2025-10-25T16:11:02.661281",
+    "duration_seconds": 300,
+    "instrument": "EUR_USD",
+    "position_size": 1000,
+    "initial_balance": 10000
+  },
+  "metrics": {
+    "total_trades": 0,
+    "winning_trades": 0,
+    "losing_trades": 0,
+    "total_profit_loss": 0,
+    "largest_win": 0,
+    "largest_loss": 0,
+    "average_trade_size": 0,
+    "win_rate": 0
+  },
+  "trades": []
+}

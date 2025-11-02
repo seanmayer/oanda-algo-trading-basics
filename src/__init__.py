@@ -1,1 +1,0 @@
-# OANDA Algorithmic Trading Package
